@@ -1,0 +1,395 @@
+<html>
+    <head>
+        <title>RaspberryPi Dashboard</title>
+        <style>
+                .slidecontainer {
+                width: 100%;			
+                }
+                
+                .slider {
+                -webkit-appearance: none;
+                width: 70%;
+                height: auto;
+                border-radius: 5px;  
+                background: #c5c6c7;
+                outline: none;
+                opacity: 0.7;
+                -webkit-transition: .2s;
+                transition: opacity .2s;
+                }
+
+                .slider:hover {
+                opacity: 1;
+                }
+                
+                .slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: rgb(100,100,100);
+                cursor: pointer;
+                }
+                .slider::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: rgb(100,100,100);
+                cursor: pointer;
+                }
+				
+				.switch {
+				  position: relative;
+				  display: inline-block;
+				  width: 60px;
+				  height: 34px;
+				}
+
+				.switch input { 
+				  opacity: 0;
+				  width: 0;
+				  height: 0;
+				}
+
+				.slider1 {
+				  position: absolute;
+				  cursor: pointer;
+				  top: 0;
+				  left: 0;
+				  right: 0;
+				  bottom: 0;
+				  background-color: #ccc;
+				  -webkit-transition: .4s;
+				  transition: .4s;
+				}
+
+				.slider1:before {
+				  position: absolute;
+				  content: "";
+				  height: 26px;
+				  width: 26px;
+				  left: 4px;
+				  bottom: 4px;
+				  background-color: white;
+				  -webkit-transition: .4s;
+				  transition: .4s;
+				}
+
+				input:checked + .slider1 {
+				  background-color: #2196F3;
+				}
+
+				input:focus + .slider1 {
+				  box-shadow: 0 0 1px #2196F3;
+				}
+
+				input:checked + .slider1:before {
+				  -webkit-transform: translateX(26px);
+				  -ms-transform: translateX(26px);
+				  transform: translateX(26px);
+				}
+
+				/* Rounded sliders */
+				.slider1.round {
+				  border-radius: 34px;
+				}
+
+				.slider1.round:before {
+				  border-radius: 50%;
+				}
+				
+				button {
+					padding: 7px;
+					border: none;
+					border-radius: 4px;
+					cursor: pointer;
+				}
+
+				button.RedButton {
+				   background-color: red;
+				}
+            </style>        
+    </head>
+    <body onload="init()">
+        <h1 style="font-size:30px;" align="center" >Sigi Segway Dashboard</h1>
+        
+        <table style="width:100%;">
+
+			<tr>
+				<th style="width:33%; height:50%">
+					<h3 style="font-size:25px;" align="center">Control Interface</h3>
+					<hr>
+					<div class="text" style="float: left;width: 50%; height: auto;">
+						<p>Main Switch: <span id="msvalID"></p>
+						<input type="range" min="0" max="1" value="0" class="switch" id="msvalue">						
+					</div>
+					<div class="text" style="float: left;width: 50%; height: auto;">
+						<p>Position Control: <span id="svalID"></p>
+						<input type="range" min="0" max="1" value="0" class="switch" id="svalue">						
+					</div>
+					<hr>
+
+					<h3 style="font-size:25px;" align="center">Control Parameters</h3>
+					<div>
+						<button onclick="resetParams()" class="RedButton">Reset Controls</input>
+					</div>
+                    <div class="slidecontainer">
+                        <p>Amplitude&nbsp&nbsp&nbsp&nbspValue: <span id="avalID"></p>
+                        <input type="range" min="0" max="10" value="5" step="0.1" class="slider" id="avalue">					
+                    </div>
+					
+                    <div class="slidecontainer">
+                        <p>P-Gain&nbsp&nbsp&nbsp&nbspValue: <span id="pvalID"></p>
+                        <input type="range" min="0" max="1.5" value="0.5" step="0.05" class="slider" id="pvalue">
+                    </div>
+                    <div class="slidecontainer">
+                        <p>I-Gain&nbsp&nbsp&nbsp&nbspValue: <span id="ivalID"></p>
+                        <input type="range" min="0" max="1" value="0" step="0.05" class="slider" id="ivalue">
+                    </div>
+                    <div class="slidecontainer">
+                        <p>D-Gain&nbsp&nbsp&nbsp&nbspValue: <span id="dvalID"></p>
+                        <input type="range" min="0" max="0.1" value="0" step="0.005" class="slider" id="dvalue">					
+                    </div>
+					<hr>
+					<div id="log"></div>
+					<hr>
+                </th>
+				
+				<th style="width:100%; height:100%">
+					<div id="chart" style="float: left;width: 100%; height: 100%;" align="left" ></div>
+				</th>
+				
+
+            </tr>
+			<tr>
+				<th style="width:33%; height:33%">
+					<img src="Picture2.png" alt="Sigi Schematics" width="372" height="431">
+				</th>
+				<th style="width:67%; height:33%">
+					<div id="chart1" style="float: left;width: 100%; height: 33%;" align="left" ></div>
+				</th>
+			</tr>
+        <br>
+        <br>
+        <br>
+        
+        <script src="https://cdn.plot.ly/plotly-latest.js" charset="utf-8"></script>
+        <script src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="text/javascript">
+            // Config
+            var port = 9000;
+            //var host = "ws://192.168.1.9:9000"; // No need to change this if using localhost
+			var host = "ws://192.168.43.245:9000"; // No need to change this if using localhost
+            var consoleLogOnScreen = true; // If true shows the console.log in an HTML element
+            
+            /*
+            Variables Description
+			some more info: https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_client_applications
+            socket : For creating a websocket.
+            Accelerometer, angular, magfield : Arrays of size 3 for storing readings of x, y and z coordinates.
+            Additional : A 4 size array to store Temperature , Pressure , Humidity and Joystick at 0 , 1 , 2 and 3 indexes respectively.
+            acc , ang , mag , adl: Temporary arrays which will recieve values and then copy these values to above ones.
+            sample_rate : Rate at which input data is coming.
+            g : acceleration due to gravity.
+            */
+            
+            var socket;
+            var setp = 0, rpos = 0, perr = 0, mact = 0, time = 0;
+            var sample_rate = 0.1 ;
+            var g = 9.8 ;
+            var OnOff=0, state = 0, amplitude = 5, pgainvalue = 0.5, igainvalue = 0, dgainvalue = 0;
+            //var a = -1 ;
+            // Calling the functions for plotting graph, creating gauge and joystick response.
+            plot_fnc() ;
+            
+            function init() {
+            
+            if (consoleLogOnScreen) {
+            // Function to output console.log to html element (logs on screen)
+            // From: http://stackoverflow.com/a/20256785/1709835
+            (function () {
+            if (!console) {
+            console = {};
+            }
+            var old = console.log;
+            var logger = document.getElementById('log');
+            console.log = function (message) {
+            logger.innerHTML += message + '<br />';
+            }
+            })();
+            }
+            
+            // Websocket!
+            try {
+            socket = new WebSocket(host);
+            console.log('WebSocket status '+socket.readyState); //was commented out RJ
+            socket.onopen    = function(msg) { 		
+            console.log('WebSocket has been opened')
+            };
+            socket.onmessage = function(msg) { 
+            
+            var obj = JSON.parse(msg.data);								
+            var i,j;
+            for(j =0; j< Object.keys(obj.Signal[0].Value).length;j++){								
+            setp = obj.Signal[0].Value[j] ;
+            }
+            for(j =0; j< Object.keys(obj.Signal[1].Value).length;j++){
+            rpos = obj.Signal[1].Value[j] ;
+            }
+            for(j =0; j< Object.keys(obj.Signal[2].Value).length;j++){
+            perr = obj.Signal[2].Value[j] ;
+            }
+            for(j =0; j< Object.keys(obj.Signal[3].Value).length;j++){								
+            mact = obj.Signal[3].Value[j];
+            }
+            
+            time = time + sample_rate ;
+            
+            };
+			
+            socket.onclose   = function(msg) { 
+            console.log("Disconnected - status "+this.readyState); 
+            };
+            }
+            catch(ex){ 
+            console.log(ex); 
+            }
+            }
+			          
+            function plot_fnc(){
+            
+            Plotly.plot('chart',[{
+            x : [time],
+            y : [setp],
+            type:'line',
+            name : 'Setpoint'
+            } , {
+            x : [time],
+            y : [rpos],
+            type:'line',
+            name : 'Real Position'
+            }] , {title : 'Position(cm)',autosize: true});
+            
+            Plotly.newPlot('chart1',[{
+            x : [time],
+            y : [perr],
+            type:'line',
+            name : 'Pos. Error'
+            } , {
+            x : [time],
+            y : [mact],
+            type:'line',
+            name : 'Output'
+            }] , {title : 'Actuation/Output', autosize: true});
+            
+            setInterval(function(){
+            Plotly.extendTraces('chart',{ x:[[time] , [time]] , y:[[setp] , [rpos]]}, [0 , 1]);
+            Plotly.extendTraces('chart1',{ x:[[time] , [time]] , y:[[perr] , [mact]]}, [0 , 1]);
+            },1); 
+            
+            }
+			
+           		
+            function quit(){
+            if (socket != null) {
+            console.log("Close Socket");
+            socket.close();
+            socket=null;
+            }
+            }
+            
+            function pageScroll() {
+            window.scrollBy(0,1);
+            scrolldelay = setTimeout(pageScroll,10);
+            }
+            
+            
+            function sendWebsocData(){
+			// console.log('OnOff: ' + Number(OnOff) + ' ctrl: ' + Number(state) + ' Ampl: ' + amplitude + ' P: ' + pgainvalue + ' I: ' + igainvalue + ' D: ' + dgainvalue)
+            msg =  JSON.stringify({"BlockID":"websub 1","Signal":[{"DataType":"double","Value":[Number(OnOff)]}, {"DataType":"double","Value":[Number(state)]}, {"DataType":"double","Value":[Number(amplitude)]}, {"DataType":"double","Value":[Number(pgainvalue)]}, {"DataType":"double","Value":[Number(igainvalue)]}, {"DataType":"double","Value":[Number(dgainvalue)]}]})
+            socket.send(msg)
+            }
+            
+			var ms_slider = document.getElementById("msvalue");
+            
+            ms_slider.oninput = function() {
+            OnOff = Number(this.value);
+            sendWebsocData();
+            }
+			
+			var s_slider = document.getElementById("svalue");
+            
+            s_slider.oninput = function() {
+            state = Number(this.value);
+            sendWebsocData();
+            }
+			
+            var a_slider = document.getElementById("avalue");
+            var a_output = document.getElementById("avalID");
+            a_output.innerHTML = a_slider.value;
+            
+            a_slider.oninput = function() {
+            a_output.innerHTML = this.value;
+            amplitude = Number(this.value);
+            sendWebsocData();
+            }
+                      
+            var p_slider = document.getElementById("pvalue");
+            var p_output = document.getElementById("pvalID");
+            p_output.innerHTML = p_slider.value;
+            
+            p_slider.oninput = function() {
+            p_output.innerHTML = this.value;
+            pgainvalue = Number(this.value);
+            sendWebsocData();
+            }
+			
+			var i_slider = document.getElementById("ivalue");
+            var i_output = document.getElementById("ivalID");
+            i_output.innerHTML = i_slider.value;
+            
+            i_slider.oninput = function() {
+            i_output.innerHTML = this.value;
+            igainvalue = Number(this.value);
+            sendWebsocData();
+            }
+			
+			var d_slider = document.getElementById("dvalue");
+            var d_output = document.getElementById("dvalID");
+            d_output.innerHTML = d_slider.value;
+            
+            d_slider.oninput = function() {
+            d_output.innerHTML = this.value;
+            dgainvalue = Number(this.value);
+            sendWebsocData();
+            }
+			
+			function resetParams() {
+			   //ms_slider.value=0;
+			   //OnOff=Number(ms_slider.value);
+			   //s_slider.value=0;
+			   //state=Number(s_slider.value);
+			   a_slider.value = 1;
+			   a_output.innerHTML = a_slider.value;
+			   amplitude = Number(a_slider.value);
+			   p_slider.value = -0.8;
+			   p_output.innerHTML = p_slider.value;
+			   pgainvalue = Number(p_slider.value);
+			   i_slider.value = 0;
+			   i_output.innerHTML = i_slider.value;
+			   igainvalue = Number(i_slider.value);
+			   d_slider.value = 0;
+			   d_output.innerHTML = d_slider.value;
+			   dgainvalue = Number(d_slider.value);
+			   sendWebsocData()
+			};
+            
+            function reconnect() {
+            quit();
+            init();
+            }
+        </script>
+
+    </body>
+</html>

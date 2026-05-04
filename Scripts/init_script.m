@@ -1,0 +1,2 @@
+clear
+copyfile ../Sources ../Code/
