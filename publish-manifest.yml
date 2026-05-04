@@ -1,0 +1,20 @@
+
+public:
+  include:
+    - Cache
+    - Code
+    - Data
+    - Helpers
+    - Libraries
+    - Models
+    - resources
+    - Scripts
+    - SFunctionSources
+    - Sources
+    - Specs
+    - Websocket
+    - Work
+
+  exclude_patterns:
+    - "**/*internal*"
+    - "**/.git*"
