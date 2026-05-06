@@ -1,6 +1,6 @@
 # Sigi Segway - Model based desing for a low-cost hardware robot
 
-[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=resjoehr/Balancing-Robot_MBD-Demo&project=Sigi_Controls_Gitlab.prj)
+[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=resjoehr/Balancing_Robot_MBD_Workshop&project=Sigi_Controls_Gitlab.prj)
 
 ## Problem Statement
 This demo highlights the model-based design (MBD) workflow for a low-cost segway robot. The mechanical and electrical parts of the robot are modeled using Simscape and the parameters of the models are adjusted to experimental values using Simulink design optimization. Based on the digital twin representation, control algorithms for high and low-level control are implemented, which can be simulated in Simscape or directly deployed to the hardware using automatic code generation.
